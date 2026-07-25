@@ -25,7 +25,7 @@ The pipeline is a synchronous frame loop. Each frame is resized, passed independ
 5. Match detections to recent tracks using class-aware IoU/centroid gating. IDs survive short missed-detection intervals configured by `tracker_max_missed_frames`.
 6. Estimate approximate distance from focal length, assumed object height, and image-space box height. Classify each object as Left, Centre, or Right and compute a configurable LOW/MEDIUM/HIGH collision risk.
 7. Advance the behaviour state machine with priority `Emergency Brake` → `Slow Down` → `Follow Vehicle` → `Recovery`/`Lane Centering` → `Cruise`.
-8. Convert the active behaviour into bounded steering, throttle, and brake values. Emergency braking is immediate; ordinary target-speed changes are smoothed by configuration.
+8. Pass the behaviour intent through independent steering, throttle, and brake controllers. Steering uses lane offset/confidence and state; throttle maps state target speed; brake handles hazard intensity. Each output is bounded and rate-limited, while emergency braking remains immediate.
 9. Render the active state and log every state transition.
 
 ## Module Descriptions
@@ -35,7 +35,10 @@ The pipeline is a synchronous frame loop. Each frame is resized, passed independ
 - `src/lane_detection.py`: classical lane geometry estimation.
 - `src/object_detection.py`: optional-at-import YOLOv8 inference adapter, lightweight persistent tracker, monocular distance estimator, relative-position classifier, and collision-risk rules.
 - `src/decision_module.py`: deterministic behaviour state machine with configurable transitions, steering, speed, braking, recovery, and transition logging. The `DrivingDecision` actuator fields remain unchanged for downstream compatibility.
-- `src/vehicle_controller.py`: backend-neutral command interface and explicit CARLA boundary.
+- `src/steering_controller.py`: lane-aware steering correction, confidence gating, smoothing, and steering rate limiting.
+- `src/throttle_controller.py`: state-aware target-speed conversion, throttle smoothing, and acceleration/deceleration limits.
+- `src/brake_controller.py`: brake smoothing and release limiting with an immediate Emergency Brake override.
+- `src/vehicle_controller.py`: composes the three controllers, exposes structured `ControllerDiagnostics`, and retains the backend-neutral command interface and explicit CARLA boundary.
 - `src/logger.py`: console/file logging with structured frame events including object IDs, distances, risks, and counts.
 - `src/main.py`: composition root and command-line entry point.
 

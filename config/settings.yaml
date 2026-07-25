@@ -107,3 +107,21 @@ control:
   vehicle_classes: [car, bus, truck, motorcycle]
   speed_smoothing_factor: 0.35
   state_logging_enabled: true
+  controller_max_speed_kmh: 50.0
+  steering_smoothing_factor: 0.35
+  steering_rate_limit: 0.12
+  controller_lane_offset_gain: 0.003
+  controller_min_lane_confidence: 0.25
+  throttle_smoothing_factor: 0.35
+  throttle_increase_rate: 0.08
+  throttle_decrease_rate: 0.15
+  brake_smoothing_factor: 0.35
+  brake_rate_limit: 0.25
+  brake_release_rate_limit: 0.10
+  controller_state_speed_scale:
+    Cruise: 1.0
+    Lane Centering: 1.0
+    Follow Vehicle: 1.0
+    Slow Down: 1.0
+    Emergency Brake: 0.0
+    Recovery: 1.0

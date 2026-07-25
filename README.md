@@ -12,7 +12,7 @@ The repository demonstrates a production-style perception stage: camera input is
 - Reusable Ultralytics YOLOv8 detector for cars, buses, trucks, motorcycles, people, traffic lights, and traffic signs, with lightweight IoU/centroid tracking.
 - Structured object metadata: persistent ID, class, confidence, bounding box, monocular distance approximation, relative position, and LOW/MEDIUM/HIGH collision risk.
 - Deterministic modular driving-behaviour state machine: Cruise, Lane Centering, Follow Vehicle, Slow Down, Emergency Brake, and Recovery.
-- Backend-neutral vehicle controller with a safe print backend and a real CARLA adapter boundary.
+- Modular vehicle controller with independent steering, throttle, and brake components, smoothing, rate limits, structured diagnostics, and a safe print backend.
 - YAML configuration, typed dataclasses, structured logs, video/webcam/image input, and optional rendered outputs.
 - Google Colab and VS Code friendly layout with lightweight unit tests.
 
@@ -79,6 +79,10 @@ Set `input.source` to a path such as `assets/sample_images/drive.jpg`, a video p
 Object distance is a configurable monocular approximation based on bounding-box height and assumed real-world object height. It is not true depth estimation; calibrated stereo, LiDAR, or sensor fusion should be used for safety-critical distance measurement.
 
 The behaviour engine consumes lane confidence/offset and tracked object metadata. Its transition thresholds and speed targets are exposed under `control` in `config/settings.yaml`; every decision overlay includes the current state.
+
+The controller consumes the behaviour decision and independently computes bounded steering, throttle, and brake outputs. Each command includes diagnostics with actuator values, driving state, target speed, and controller status. Emergency braking overrides smoothing for immediate full brake and zero throttle; ordinary commands use configurable smoothing and rate limits.
+
+Controller implementation is split across `src/steering_controller.py`, `src/throttle_controller.py`, and `src/brake_controller.py`; `src/vehicle_controller.py` composes them and preserves the original `send()` interface.
 
 For Colab, clone the repository, install `requirements.txt`, upload a media file, and change `input.source` in the YAML or pass a copied configuration path.
 

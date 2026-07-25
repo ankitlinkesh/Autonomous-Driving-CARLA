@@ -48,14 +48,22 @@ def _process_frame(
         frame.shape[1],
         lane_confidence=lane.lane_confidence,
     )
-    command = controller.send(decision.steering, decision.target_speed_kmh, decision.brake)
+    command = controller.send(
+        decision.steering,
+        decision.target_speed_kmh,
+        decision.brake,
+        driving_state=decision.current_state,
+        lane_offset=lane.lane_offset,
+        lane_confidence=lane.lane_confidence,
+    )
     rendered = draw_boxes(lane.image, [d.to_dict() for d in detections.detections])
     rendered = draw_fps(rendered, detections.fps)
     lane_info = "lane offset: unavailable" if lane.lane_offset is None else f"lane offset: {lane.lane_offset:.1f}px"
     draw_text(rendered, lane_info, (20, 60))
     draw_text(rendered, f"decision: {decision.reason}", (20, 90), (0, 220, 255))
 
-    cv2.rectangle(rendered, (15, 105), (430, 345), (25, 25, 25), -1)
+    controller_status = command.diagnostics.status if command.diagnostics is not None else "UNKNOWN"
+    cv2.rectangle(rendered, (15, 105), (470, 370), (25, 25, 25), -1)
     overlay_lines = [
         f"Mode: {input_mode.title()}",
         f"Objects: {len(detections.detections)}",
@@ -64,6 +72,7 @@ def _process_frame(
         f"Throttle: {command.throttle:.2f}",
         f"Brake: {command.brake:.2f}",
         f"State: {decision.current_state}",
+        f"Controller: {controller_status}",
         f"Decision: {decision.reason}",
     ]
     for index, line in enumerate(overlay_lines):
@@ -96,7 +105,7 @@ def run(config_path: str = "config/settings.yaml") -> None:
     lane_detector = LaneDetector(config.lane)
     detector = YOLOv8Detector(config.detection)
     decision_module = DecisionModule(config.control, logger=logger)
-    controller = VehicleController()
+    controller = VehicleController(config=config.control)
     source = config.input.source
     input_mode = _detect_input_mode(source)
     logger.info("Detected input mode: %s (source=%s)", input_mode, source)
