@@ -10,6 +10,7 @@ Autonomous vehicles must convert camera observations into safe, explainable driv
 2. Detect lane geometry and relevant road users.
 3. Produce interpretable decisions and normalized actuator commands.
 4. Provide configuration, logging, tests, and extension points for CARLA.
+5. Convert perception observations into deterministic, inspectable driving behaviours.
 
 ## System Architecture
 
@@ -23,9 +24,9 @@ The pipeline is a synchronous frame loop. Each frame is resized, passed independ
 4. Run YOLOv8 and normalize its boxes into project-level `Detection` objects.
 5. Match detections to recent tracks using class-aware IoU/centroid gating. IDs survive short missed-detection intervals configured by `tracker_max_missed_frames`.
 6. Estimate approximate distance from focal length, assumed object height, and image-space box height. Classify each object as Left, Centre, or Right and compute a configurable LOW/MEDIUM/HIGH collision risk.
-7. Apply safety-first rules: brake for a close pedestrian, reduce speed for a close vehicle, and steer from lane offset.
-8. Convert the intent to bounded steering, throttle, and brake values.
-9. Render and log the result.
+7. Advance the behaviour state machine with priority `Emergency Brake` → `Slow Down` → `Follow Vehicle` → `Recovery`/`Lane Centering` → `Cruise`.
+8. Convert the active behaviour into bounded steering, throttle, and brake values. Emergency braking is immediate; ordinary target-speed changes are smoothed by configuration.
+9. Render the active state and log every state transition.
 
 ## Module Descriptions
 
@@ -33,11 +34,11 @@ The pipeline is a synchronous frame loop. Each frame is resized, passed independ
 - `src/image_processing.py`: reusable OpenCV drawing and image helpers.
 - `src/lane_detection.py`: classical lane geometry estimation.
 - `src/object_detection.py`: optional-at-import YOLOv8 inference adapter, lightweight persistent tracker, monocular distance estimator, relative-position classifier, and collision-risk rules.
-- `src/decision_module.py`: deterministic safety rules.
+- `src/decision_module.py`: deterministic behaviour state machine with configurable transitions, steering, speed, braking, recovery, and transition logging. The `DrivingDecision` actuator fields remain unchanged for downstream compatibility.
 - `src/vehicle_controller.py`: backend-neutral command interface and explicit CARLA boundary.
 - `src/logger.py`: console/file logging with structured frame events including object IDs, distances, risks, and counts.
 - `src/main.py`: composition root and command-line entry point.
 
 ## Future Work
 
-The object-distance model is intentionally a monocular approximation, not depth estimation. CARLA integration should add a sensor/input adapter and instantiate `CarlaBackend` with a real CARLA vehicle. It must not alter lane, detector, decision, or logging contracts. Future evaluation should report lane offset error, object precision/recall, tracking ID switches, distance error against ground truth, braking latency, FPS, and scenario-level collision outcomes.
+The object-distance model is intentionally a monocular approximation, not depth estimation. CARLA integration should add a sensor/input adapter and instantiate `CarlaBackend` with a real CARLA vehicle. It must not alter lane, detector, decision, or logging contracts. Future evaluation should report lane offset error, object precision/recall, tracking ID switches, distance error against ground truth, state-transition latency, braking latency, FPS, and scenario-level collision outcomes.

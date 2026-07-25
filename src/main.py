@@ -42,7 +42,12 @@ def _process_frame(
     frame = resize(frame, config.input.image_width, config.input.image_height)
     lane = lane_detector.detect(frame)
     detections = detector.detect(frame)
-    decision = decision_module.decide(lane.lane_offset, detections.detections, frame.shape[1])
+    decision = decision_module.decide(
+        lane.lane_offset,
+        detections.detections,
+        frame.shape[1],
+        lane_confidence=lane.lane_confidence,
+    )
     command = controller.send(decision.steering, decision.target_speed_kmh, decision.brake)
     rendered = draw_boxes(lane.image, [d.to_dict() for d in detections.detections])
     rendered = draw_fps(rendered, detections.fps)
@@ -50,12 +55,7 @@ def _process_frame(
     draw_text(rendered, lane_info, (20, 60))
     draw_text(rendered, f"decision: {decision.reason}", (20, 90), (0, 220, 255))
 
-    decision_label = "Maintain Lane"
-    if decision.brake > 0:
-        decision_label = "Brake"
-    elif "vehicle ahead" in decision.reason.lower():
-        decision_label = "Reduce Speed"
-    cv2.rectangle(rendered, (15, 105), (335, 295), (25, 25, 25), -1)
+    cv2.rectangle(rendered, (15, 105), (430, 345), (25, 25, 25), -1)
     overlay_lines = [
         f"Mode: {input_mode.title()}",
         f"Objects: {len(detections.detections)}",
@@ -63,7 +63,8 @@ def _process_frame(
         f"Steering: {command.steering:.2f}",
         f"Throttle: {command.throttle:.2f}",
         f"Brake: {command.brake:.2f}",
-        f"Decision: {decision_label}",
+        f"State: {decision.current_state}",
+        f"Decision: {decision.reason}",
     ]
     for index, line in enumerate(overlay_lines):
         draw_text(rendered, line, (25, 130 + index * 24), (235, 235, 235))
@@ -94,7 +95,7 @@ def run(config_path: str = "config/settings.yaml") -> None:
     logger = create_logger(config.log_dir)
     lane_detector = LaneDetector(config.lane)
     detector = YOLOv8Detector(config.detection)
-    decision_module = DecisionModule(config.control)
+    decision_module = DecisionModule(config.control, logger=logger)
     controller = VehicleController()
     source = config.input.source
     input_mode = _detect_input_mode(source)
