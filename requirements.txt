@@ -1,0 +1,10 @@
+numpy>=1.26,<3
+opencv-python>=4.8
+PyYAML>=6.0
+matplotlib>=3.8
+torch>=2.2
+ultralytics>=8.2
+pytest>=8.0
+# Optional: install the CARLA Python API separately for simulator integration.
+# carla
+

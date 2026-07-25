@@ -1,0 +1,109 @@
+project:
+  name: CARLA-Based Autonomous Driving Simulation Using Machine Learning
+  log_dir: logs
+
+input:
+  source: assets/sample_images/road with traffic1.png
+  image_width: 1280
+  image_height: 720
+  display: true
+  save_outputs: false
+
+detection:
+  model_path: models/yolov8n.pt
+  confidence_threshold: 0.35
+  iou_threshold: 0.45
+  device: auto
+  target_classes:
+    - car
+    - bus
+    - truck
+    - motorcycle
+    - person
+    - traffic light
+    - traffic sign
+  tracking_enabled: true
+  tracker_iou_threshold: 0.30
+  tracker_max_missed_frames: 8
+  tracker_max_center_distance_ratio: 0.20
+  tracker_class_agnostic: false
+  distance_enabled: true
+  distance_focal_length_pixels: 700.0
+  distance_default_object_height_m: 1.7
+  distance_min_m: 1.0
+  distance_max_m: 100.0
+  distance_smoothing_factor: 0.35
+  distance_reference_heights_m:
+    car: 1.5
+    bus: 3.2
+    truck: 3.4
+    motorcycle: 1.4
+    person: 1.7
+  relative_position_left_ratio: 0.33
+  relative_position_right_ratio: 0.67
+  collision_high_distance_m: 8.0
+  collision_medium_distance_m: 20.0
+  collision_relevant_positions: [left, centre, right]
+  collision_high_classes: [person, car, bus, truck, motorcycle]
+  collision_medium_classes: [person, car, bus, truck, motorcycle]
+
+lane:
+  canny_low: 50
+  canny_high: 150
+  blur_kernel: 5
+  hough_rho: 1.0
+  hough_theta_deg: 1.0
+  hough_threshold: 20
+  min_line_length: 30
+  max_line_gap: 100
+  min_slope: 0.35
+  max_slope: 4.0
+  side_split_ratio: 0.52
+  roi_top_ratio: 0.58
+  roi_bottom_ratio: 0.98
+  roi_top_width_ratio: 0.20
+  roi_bottom_width_ratio: 0.95
+  adaptive_roi: true
+  roi_adaptation_gain: 0.25
+  dashed_line_support: true
+  dash_morphology_kernel: 3
+  curve_degree: 2
+  curve_samples: 24
+  temporal_smoothing: true
+  smoothing_factor: 0.35
+  max_missing_frames: 5
+  confidence_segments_target: 8
+  single_side_confidence: 0.25
+  expected_lane_width_min: 120.0
+  expected_lane_width_max: 1100.0
+  parallelism_tolerance: 1.5
+  debug_visualization: true
+  debug_draw_roi: true
+  debug_draw_raw_lines: false
+  debug_line_thickness: 5
+  debug_overlay_alpha: 0.30
+  offset_threshold_pixels: 50
+
+control:
+  target_speed_kmh: 30.0
+  reduced_speed_kmh: 12.0
+  pedestrian_distance_pixels: 180
+  vehicle_distance_pixels: 140
+  steering_gain: 0.003
+  max_steering: 1.0
+  lane_offset_threshold_pixels: 50.0
+  minimum_lane_confidence: 0.25
+  lane_centering_speed_kmh: 24.0
+  follow_vehicle_distance_m: 22.0
+  follow_distance_target_m: 14.0
+  follow_speed_kmh: 16.0
+  follow_speed_gain: 1.0
+  slow_down_speed_kmh: 10.0
+  recovery_speed_kmh: 8.0
+  recovery_hold_frames: 5
+  emergency_obstacle_distance_m: 5.0
+  emergency_pedestrian_distance_m: 12.0
+  emergency_classes: [person, car, bus, truck, motorcycle]
+  vehicle_classes: [car, bus, truck, motorcycle]
+  speed_smoothing_factor: 0.35
+  state_logging_enabled: true
